@@ -18,8 +18,8 @@
   },
   "keywords": ["electron", "react", "typescript", "ai", "agents", "llm"],
   "author": {
-    "name": "Autonomous Agent Desktop",
-    "email": "support@autonomousagent.com"
+    "name": "Chase Sunstrom",
+    "email": "casunstrom@gmail.com"
   },
   "license": "MIT",
   "devDependencies": {
