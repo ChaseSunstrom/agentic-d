@@ -11,6 +11,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => {
     { id: 'agents', label: 'Agents', icon: '🤖' },
     { id: 'providers', label: 'LLM Providers', icon: '🔌' },
     { id: 'models', label: 'Local Models', icon: '💾' },
+    { id: 'ollama', label: 'Ollama', icon: '🦙' },
+    { id: 'commands', label: 'Commands', icon: '⌨️' },
     { id: 'resources', label: 'Resources', icon: '💻' },
     { id: 'settings', label: 'Settings', icon: '⚙️' }
   ];

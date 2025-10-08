@@ -5,6 +5,8 @@ import { LLMProviderManager } from './LLMProviderManager';
 import { AutomationService } from './AutomationService';
 import { ResourceMonitor } from './ResourceMonitor';
 import { CostTracker } from './CostTracker';
+import { AgentCommunication } from './AgentCommunication';
+import { CommandExecutor } from './CommandExecutor';
 
 export interface Agent {
   id: string;
@@ -17,6 +19,8 @@ export interface Agent {
     computerControl: boolean;
     fileSystem: boolean;
     network: boolean;
+    agentCommunication: boolean;
+    commandExecution: boolean;
   };
   status: 'idle' | 'running' | 'paused' | 'error';
   config: {
@@ -31,6 +35,9 @@ export interface Agent {
     totalCost: number;
     lastRun?: Date;
     averageRunTime: number;
+    messagesSent: number;
+    messagesReceived: number;
+    commandsExecuted: number;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -46,6 +53,8 @@ export interface AgentTask {
   result?: any;
   error?: string;
   logs: Array<{ timestamp: Date; level: string; message: string }>;
+  delegatedFrom?: string; // Agent ID that delegated this task
+  delegatedTo?: string; // Agent ID that this task is delegated to
 }
 
 export class AgentManager extends EventEmitter {
@@ -58,7 +67,9 @@ export class AgentManager extends EventEmitter {
     private llmProviderManager: LLMProviderManager,
     private automationService: AutomationService,
     private resourceMonitor: ResourceMonitor,
-    private costTracker: CostTracker
+    private costTracker: CostTracker,
+    private agentCommunication: AgentCommunication,
+    private commandExecutor: CommandExecutor
   ) {
     super();
     this.store = new Store({ name: 'agents' });
@@ -66,6 +77,28 @@ export class AgentManager extends EventEmitter {
     this.tasks = new Map();
     this.runningAgents = new Map();
     this.loadAgents();
+    this.setupCommunicationHandlers();
+  }
+
+  private setupCommunicationHandlers(): void {
+    // Listen for messages and create tasks when agents receive requests
+    this.agentCommunication.on('message:sent', (message: any) => {
+      if (message.type === 'request' && message.metadata?.requiresResponse) {
+        const agent = this.agents.get(message.toAgentId);
+        if (agent && agent.status === 'running') {
+          // Create a task for the receiving agent
+          const task: AgentTask = {
+            id: uuidv4(),
+            agentId: message.toAgentId,
+            description: `Respond to request from ${message.fromAgentId}: ${message.content}`,
+            status: 'pending',
+            logs: [],
+            delegatedFrom: message.fromAgentId
+          };
+          this.tasks.set(task.id, task);
+        }
+      }
+    });
   }
 
   private loadAgents(): void {
@@ -88,7 +121,10 @@ export class AgentManager extends EventEmitter {
         totalRuns: 0,
         totalTokens: 0,
         totalCost: 0,
-        averageRunTime: 0
+        averageRunTime: 0,
+        messagesSent: 0,
+        messagesReceived: 0,
+        commandsExecuted: 0
       },
       createdAt: new Date(),
       updatedAt: new Date()
@@ -199,14 +235,39 @@ export class AgentManager extends EventEmitter {
       throw new Error('LLM provider not found');
     }
 
+    // Check for new messages if communication is enabled
+    let messages: any[] = [];
+    if (agent.capabilities.agentCommunication) {
+      messages = this.agentCommunication.getMessages(agent.id, false);
+      agent.stats.messagesReceived += messages.length;
+      // Mark messages as read
+      messages.forEach(msg => this.agentCommunication.markAsRead(msg.id));
+    }
+
+    // Get available agents for delegation
+    const availableAgents = Array.from(this.agents.values())
+      .filter(a => a.id !== agent.id && a.status === 'running')
+      .map(a => ({ id: a.id, name: a.name, description: a.description }));
+
     const systemContext = {
       agentName: agent.name,
       capabilities: agent.capabilities,
       stats: agent.stats,
-      systemResources: await this.resourceMonitor.getResourceUsage()
+      systemResources: await this.resourceMonitor.getResourceUsage(),
+      newMessages: messages,
+      availableAgents: agent.capabilities.agentCommunication ? availableAgents : []
     };
 
-    const prompt = `${agent.systemPrompt}\n\nYou are an autonomous agent. Based on your objectives and current context, what should you do next?\n\nContext: ${JSON.stringify(systemContext, null, 2)}\n\nRespond with a JSON object containing: { "action": "action_type", "description": "what you'll do", "steps": ["step1", "step2"] }`;
+    const capabilitiesPrompt = agent.capabilities.agentCommunication 
+      ? '\n\nYou can communicate with other agents using SEND_MESSAGE action.'
+      + '\nYou can delegate tasks using DELEGATE_TASK action.'
+      : '';
+    
+    const commandPrompt = agent.capabilities.commandExecution
+      ? '\n\nYou can execute terminal commands using EXECUTE_COMMAND action.'
+      : '';
+
+    const prompt = `${agent.systemPrompt}\n\nYou are an autonomous agent. Based on your objectives and current context, what should you do next?${capabilitiesPrompt}${commandPrompt}\n\nContext: ${JSON.stringify(systemContext, null, 2)}\n\nRespond with a JSON object containing: { "action": "action_type", "description": "what you'll do", "steps": ["step1", "step2"], "data": {} }`;
 
     try {
       const response = await provider.complete(agent.model, [
@@ -229,11 +290,66 @@ export class AgentManager extends EventEmitter {
         agent.stats.totalCost += cost;
       }
 
-      return JSON.parse(response.content);
+      const decision = JSON.parse(response.content);
+      
+      // Handle special actions immediately
+      if (decision.action === 'SEND_MESSAGE' && agent.capabilities.agentCommunication) {
+        this.agentCommunication.sendMessage(
+          agent.id,
+          decision.data.toAgentId || 'broadcast',
+          decision.data.message,
+          decision.data.type || 'notification',
+          decision.data.metadata
+        );
+        agent.stats.messagesSent++;
+        this.saveAgents();
+      } else if (decision.action === 'DELEGATE_TASK' && agent.capabilities.agentCommunication) {
+        await this.delegateTask(agent.id, decision.data.toAgentId, decision.data.taskDescription);
+      } else if (decision.action === 'EXECUTE_COMMAND' && agent.capabilities.commandExecution) {
+        try {
+          const result = await this.commandExecutor.executeCommand(
+            decision.data.command,
+            { agentId: agent.id }
+          );
+          agent.stats.commandsExecuted++;
+          this.saveAgents();
+          decision.commandResult = result;
+        } catch (error) {
+          console.error('Command execution error:', error);
+          decision.commandError = error instanceof Error ? error.message : 'Unknown error';
+        }
+      }
+      
+      return decision;
     } catch (error) {
       console.error('Decision making error:', error);
       return { action: 'idle' };
     }
+  }
+
+  async delegateTask(fromAgentId: string, toAgentId: string, description: string): Promise<AgentTask> {
+    const task: AgentTask = {
+      id: uuidv4(),
+      agentId: toAgentId,
+      description,
+      status: 'pending',
+      logs: [],
+      delegatedFrom: fromAgentId
+    };
+
+    this.tasks.set(task.id, task);
+    
+    // Also send a message to notify the target agent
+    this.agentCommunication.sendMessage(
+      fromAgentId,
+      toAgentId,
+      `Task delegated: ${description}`,
+      'request',
+      { requiresResponse: true }
+    );
+
+    this.emit('task:delegated', task);
+    return task;
   }
 
   private async executeTask(agent: Agent, task: AgentTask): Promise<void> {
@@ -273,12 +389,45 @@ export class AgentManager extends EventEmitter {
         agent.stats.totalCost += cost;
       }
 
+      // Parse the response for special actions
+      let parsedResponse: any;
+      try {
+        parsedResponse = JSON.parse(response.content);
+      } catch {
+        parsedResponse = { result: response.content };
+      }
+
+      // Handle various action types
+      if (parsedResponse.action === 'SEND_MESSAGE' && agent.capabilities.agentCommunication) {
+        this.agentCommunication.sendMessage(
+          agent.id,
+          parsedResponse.data.toAgentId || 'broadcast',
+          parsedResponse.data.message,
+          parsedResponse.data.type || 'notification',
+          parsedResponse.data.metadata
+        );
+        agent.stats.messagesSent++;
+        this.saveAgents();
+      } else if (parsedResponse.action === 'EXECUTE_COMMAND' && agent.capabilities.commandExecution) {
+        try {
+          const cmdResult = await this.commandExecutor.executeCommand(
+            parsedResponse.data.command,
+            { agentId: agent.id }
+          );
+          agent.stats.commandsExecuted++;
+          this.saveAgents();
+          parsedResponse.commandResult = cmdResult;
+        } catch (error) {
+          parsedResponse.commandError = error instanceof Error ? error.message : 'Unknown error';
+        }
+      }
+
       // If computer control is enabled, execute automation actions
       if (agent.capabilities.computerControl && response.content.includes('AUTOMATION:')) {
         await this.executeAutomationCommands(response.content);
       }
 
-      task.result = response.content;
+      task.result = parsedResponse;
       task.status = 'completed';
       task.endTime = new Date();
       
@@ -383,5 +532,40 @@ export class AgentManager extends EventEmitter {
     this.saveAgents();
     this.emit('agent:updated', agent);
     return agent;
+  }
+
+  // Get messages for an agent
+  async getAgentMessages(agentId: string, includeRead: boolean = false): Promise<any[]> {
+    return this.agentCommunication.getMessages(agentId, includeRead);
+  }
+
+  // Send message from an agent
+  async sendAgentMessage(
+    fromAgentId: string,
+    toAgentId: string | 'broadcast',
+    content: string,
+    type: any = 'notification'
+  ): Promise<any> {
+    const agent = this.agents.get(fromAgentId);
+    if (agent) {
+      agent.stats.messagesSent++;
+      this.saveAgents();
+    }
+    return this.agentCommunication.sendMessage(fromAgentId, toAgentId, content, type);
+  }
+
+  // Get command execution history for an agent
+  async getAgentCommandHistory(agentId: string, limit: number = 50): Promise<any[]> {
+    return this.commandExecutor.getHistory(agentId, limit);
+  }
+
+  // Get all tasks
+  async getAllTasks(): Promise<AgentTask[]> {
+    return Array.from(this.tasks.values());
+  }
+
+  // Get tasks for a specific agent
+  async getAgentTasks(agentId: string): Promise<AgentTask[]> {
+    return Array.from(this.tasks.values()).filter(task => task.agentId === agentId);
   }
 }

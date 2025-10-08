@@ -56,7 +56,8 @@
     "systeminformation": "^5.21.20",
     "recharts": "^2.10.3",
     "lucide-react": "^0.294.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "extract-zip": "^2.0.1"
   },
   "build": {
     "appId": "com.autonomousagent.desktop",

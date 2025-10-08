@@ -1,5 +1,17 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+// Expose a simpler API that allows direct invoke calls
+contextBridge.exposeInMainWorld('electron', {
+  invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
+  on: (channel: string, callback: (data: any) => void) => {
+    ipcRenderer.on(channel, (_, data) => callback(data));
+  },
+  removeAllListeners: (channel: string) => {
+    ipcRenderer.removeAllListeners(channel);
+  }
+});
+
+// Keep backward compatibility with old API
 contextBridge.exposeInMainWorld('electronAPI', {
   // Agent APIs
   agent: {

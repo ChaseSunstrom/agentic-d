@@ -6,8 +6,10 @@ import Providers from './pages/Providers';
 import Models from './pages/Models';
 import Resources from './pages/Resources';
 import Settings from './pages/Settings';
+import Ollama from './pages/Ollama';
+import Commands from './pages/Commands';
 
-type Page = 'dashboard' | 'agents' | 'providers' | 'models' | 'resources' | 'settings';
+type Page = 'dashboard' | 'agents' | 'providers' | 'models' | 'resources' | 'settings' | 'ollama' | 'commands';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -22,6 +24,10 @@ const App: React.FC = () => {
         return <Providers />;
       case 'models':
         return <Models />;
+      case 'ollama':
+        return <Ollama />;
+      case 'commands':
+        return <Commands />;
       case 'resources':
         return <Resources />;
       case 'settings':
