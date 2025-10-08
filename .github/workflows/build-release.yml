@@ -1,0 +1,120 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-release:
+    name: Build and Release for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            script: package:linux
+            artifact_pattern: 'release/*.{AppImage,deb}'
+          - os: windows-latest
+            platform: windows
+            script: package:win
+            artifact_pattern: 'release/*.{exe,zip}'
+          - os: macos-latest
+            platform: macos
+            script: package:mac
+            artifact_pattern: 'release/*.{dmg,zip}'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxtst-dev libpng++-dev
+
+      - name: Setup Python (for native modules)
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and package
+        run: npm run ${{ matrix.script }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-binaries
+          path: |
+            release/*.AppImage
+            release/*.deb
+            release/*.exe
+            release/*.dmg
+            release/*.zip
+          retention-days: 7
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from package.json
+        id: package_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.package_version.outputs.version }}-${{ github.run_number }}
+          name: Release v${{ steps.package_version.outputs.version }}-${{ github.run_number }}
+          body: |
+            ## Autonomous Agent Desktop - Release v${{ steps.package_version.outputs.version }}-${{ github.run_number }}
+            
+            ### Changes
+            Built from commit: ${{ github.sha }}
+            
+            ### Downloads
+            - **Linux**: AppImage and DEB packages
+            - **Windows**: NSIS installer and portable executable
+            - **macOS**: DMG and ZIP archives
+            
+            ### Installation
+            Choose the appropriate package for your platform and follow the installation instructions in INSTALLATION.md
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
