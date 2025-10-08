@@ -1,0 +1,74 @@
+{
+  "name": "autonomous-agent-desktop",
+  "version": "1.0.0",
+  "description": "Desktop application for running autonomous agents with multiple LLM providers",
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "start": "concurrently \"npm run start:react\" \"wait-on http://localhost:3000 && npm run start:electron\"",
+    "start:react": "webpack serve --mode development --config webpack.config.js",
+    "start:electron": "cross-env NODE_ENV=development electron .",
+    "build": "npm run build:react && npm run build:electron",
+    "build:react": "webpack --mode production --config webpack.config.js",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "package": "npm run build && electron-builder",
+    "package:linux": "npm run build && electron-builder --linux",
+    "package:win": "npm run build && electron-builder --win"
+  },
+  "keywords": ["electron", "react", "typescript", "ai", "agents", "llm"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@types/uuid": "^9.0.7",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "css-loader": "^6.8.1",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "html-webpack-plugin": "^5.6.0",
+    "style-loader": "^3.3.3",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "wait-on": "^7.2.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.0",
+    "openai": "^4.24.0",
+    "axios": "^1.6.2",
+    "electron-store": "^8.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "robotjs": "^0.6.0",
+    "node-llama-cpp": "^2.7.0",
+    "systeminformation": "^5.21.20",
+    "recharts": "^2.10.3",
+    "lucide-react": "^0.294.0",
+    "uuid": "^9.0.1"
+  },
+  "build": {
+    "appId": "com.autonomousagent.desktop",
+    "productName": "Autonomous Agent Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Development"
+    },
+    "win": {
+      "target": ["nsis", "portable"]
+    }
+  }
+}
