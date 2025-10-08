@@ -144,7 +144,7 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ providers, onClose,
                   checked={computerControl}
                   onChange={(e) => setComputerControl(e.target.checked)}
                 />
-                <span>Computer Control (mouse, keyboard, screen)</span>
+                <span>🖱️ Computer Control - Mouse, keyboard, desktop screenshots</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input
@@ -152,7 +152,7 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ providers, onClose,
                   checked={fileSystem}
                   onChange={(e) => setFileSystem(e.target.checked)}
                 />
-                <span>File System Access</span>
+                <span>📁 File System Access - Read and write files</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input
@@ -160,7 +160,7 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ providers, onClose,
                   checked={network}
                   onChange={(e) => setNetwork(e.target.checked)}
                 />
-                <span>Network Access</span>
+                <span>🌐 Network Access - Make HTTP requests</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input
@@ -168,7 +168,7 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ providers, onClose,
                   checked={agentCommunication}
                   onChange={(e) => setAgentCommunication(e.target.checked)}
                 />
-                <span>Agent Communication (message passing, task delegation)</span>
+                <span>💬 Agent Communication - Message other agents, delegate tasks</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input
@@ -176,7 +176,7 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ providers, onClose,
                   checked={commandExecution}
                   onChange={(e) => setCommandExecution(e.target.checked)}
                 />
-                <span>Command Execution (run terminal commands)</span>
+                <span>⌨️ Command Execution - Run terminal/shell commands</span>
               </label>
             </div>
           </div>
@@ -215,10 +215,14 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ providers, onClose,
               value={autonomyLevel}
               onChange={(e) => setAutonomyLevel(e.target.value as any)}
             >
-              <option value="low">Low (asks for confirmation frequently)</option>
-              <option value="medium">Medium (balanced approach)</option>
-              <option value="high">High (fully autonomous)</option>
+              <option value="low">Low - Requires approval for all actions</option>
+              <option value="medium">Medium - Requires approval for commands only</option>
+              <option value="high">High - Fully autonomous, no approval needed</option>
             </select>
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '8px' }}>
+              Low/Medium autonomy agents can ask you questions and request approvals.
+              High autonomy agents operate independently without user interaction.
+            </p>
           </div>
 
           <div className="modal-footer">

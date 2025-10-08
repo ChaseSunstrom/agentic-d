@@ -31,6 +31,12 @@ body {
   overflow: hidden;
 }
 
+/* Emoji support for icons */
+.nav-item span:first-child,
+.agent-card span {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', sans-serif;
+}
+
 .app {
   display: flex;
   height: 100vh;
@@ -75,6 +81,14 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   border-left: 3px solid transparent;
+}
+
+.nav-item span:first-child {
+  font-size: 20px;
+  line-height: 1;
+  display: inline-block;
+  width: 24px;
+  text-align: center;
 }
 
 .nav-item:hover {

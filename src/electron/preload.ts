@@ -69,12 +69,33 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Automation APIs
   automation: {
-    test: () => ipcRenderer.invoke('automation:test')
+    test: () => ipcRenderer.invoke('automation:test'),
+    screenshot: (region?: any) => ipcRenderer.invoke('automation:screenshot', region),
+    execute: (command: any) => ipcRenderer.invoke('automation:execute', command)
   },
   
   // Settings APIs
   settings: {
     get: (key: string) => ipcRenderer.invoke('settings:get', key),
     set: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value)
+  },
+
+  // User Prompt APIs
+  userPrompt: {
+    respond: (promptId: string, response: any) => ipcRenderer.invoke('user-prompt:respond', promptId, response),
+    cancel: (promptId: string) => ipcRenderer.invoke('user-prompt:cancel', promptId),
+    getPending: () => ipcRenderer.invoke('user-prompt:get-pending'),
+    getCurrent: () => ipcRenderer.invoke('user-prompt:get-current'),
+    getHistory: (agentId?: string) => ipcRenderer.invoke('user-prompt:get-history', agentId),
+    clearHistory: () => ipcRenderer.invoke('user-prompt:clear-history'),
+    onNew: (callback: (data: any) => void) => {
+      ipcRenderer.on('user-prompt:new', (_, data) => callback(data));
+    },
+    onShow: (callback: (data: any) => void) => {
+      ipcRenderer.on('user-prompt:show', (_, data) => callback(data));
+    },
+    onAnswered: (callback: (data: any) => void) => {
+      ipcRenderer.on('user-prompt:answered', (_, data) => callback(data));
+    }
   }
 });

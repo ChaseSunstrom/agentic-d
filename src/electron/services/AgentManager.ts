@@ -7,6 +7,7 @@ import { ResourceMonitor } from './ResourceMonitor';
 import { CostTracker } from './CostTracker';
 import { AgentCommunication } from './AgentCommunication';
 import { CommandExecutor } from './CommandExecutor';
+import { UserPromptService } from './UserPromptService';
 
 export interface Agent {
   id: string;
@@ -69,7 +70,8 @@ export class AgentManager extends EventEmitter {
     private resourceMonitor: ResourceMonitor,
     private costTracker: CostTracker,
     private agentCommunication: AgentCommunication,
-    private commandExecutor: CommandExecutor
+    private commandExecutor: CommandExecutor,
+    private userPromptService: UserPromptService
   ) {
     super();
     this.store = new Store({ name: 'agents' });
@@ -249,13 +251,27 @@ export class AgentManager extends EventEmitter {
       .filter(a => a.id !== agent.id && a.status === 'running')
       .map(a => ({ id: a.id, name: a.name, description: a.description }));
 
+    // Capture screenshot if computer control is enabled
+    let screenshot: any = null;
+    if (agent.capabilities.computerControl) {
+      try {
+        screenshot = await this.automationService.executeCommand({
+          type: 'screenshot'
+        });
+      } catch (error) {
+        console.error('Failed to capture screenshot:', error);
+      }
+    }
+
     const systemContext = {
       agentName: agent.name,
       capabilities: agent.capabilities,
       stats: agent.stats,
       systemResources: await this.resourceMonitor.getResourceUsage(),
       newMessages: messages,
-      availableAgents: agent.capabilities.agentCommunication ? availableAgents : []
+      availableAgents: agent.capabilities.agentCommunication ? availableAgents : [],
+      hasScreenshot: screenshot !== null,
+      screenSize: screenshot ? { width: screenshot.width, height: screenshot.height } : null
     };
 
     const capabilitiesPrompt = agent.capabilities.agentCommunication 
@@ -267,12 +283,25 @@ export class AgentManager extends EventEmitter {
       ? '\n\nYou can execute terminal commands using EXECUTE_COMMAND action.'
       : '';
 
-    const prompt = `${agent.systemPrompt}\n\nYou are an autonomous agent. Based on your objectives and current context, what should you do next?${capabilitiesPrompt}${commandPrompt}\n\nContext: ${JSON.stringify(systemContext, null, 2)}\n\nRespond with a JSON object containing: { "action": "action_type", "description": "what you'll do", "steps": ["step1", "step2"], "data": {} }`;
+    const screenshotPrompt = agent.capabilities.computerControl
+      ? '\n\nYou can see the current desktop screenshot. Use ANALYZE_SCREEN action to analyze what\'s on screen.'
+      : '';
+
+    const userPromptInfo = agent.config.autonomyLevel !== 'high'
+      ? '\n\nYou can ask the user questions using ASK_USER action when you need clarification or approval.'
+      : '';
+
+    const prompt = `${agent.systemPrompt}\n\nYou are an autonomous agent. Based on your objectives and current context, what should you do next?${capabilitiesPrompt}${commandPrompt}${screenshotPrompt}${userPromptInfo}\n\nContext: ${JSON.stringify(systemContext, null, 2)}\n\nRespond with a JSON object containing: { "action": "action_type", "description": "what you'll do", "steps": ["step1", "step2"], "data": {} }`;
 
     try {
+      // Include screenshot info in prompt if available
+      const enhancedPrompt = screenshot 
+        ? `${prompt}\n\nNote: A screenshot of the desktop is available. Screen size: ${screenshot.width}x${screenshot.height}`
+        : prompt;
+
       const response = await provider.complete(agent.model, [
         { role: 'system', content: agent.systemPrompt },
-        { role: 'user', content: prompt }
+        { role: 'user', content: enhancedPrompt }
       ], {
         temperature: agent.config.temperature,
         maxTokens: agent.config.maxTokens
@@ -293,7 +322,53 @@ export class AgentManager extends EventEmitter {
       const decision = JSON.parse(response.content);
       
       // Handle special actions immediately
-      if (decision.action === 'SEND_MESSAGE' && agent.capabilities.agentCommunication) {
+      if (decision.action === 'ASK_USER') {
+        // Agent wants to ask user something
+        try {
+          let userResponse;
+          if (decision.data.type === 'confirmation') {
+            userResponse = await this.userPromptService.askConfirmation(
+              agent.id,
+              agent.name,
+              decision.data.message,
+              decision.data.context
+            );
+          } else if (decision.data.type === 'choice') {
+            userResponse = await this.userPromptService.askChoice(
+              agent.id,
+              agent.name,
+              decision.data.message,
+              decision.data.options,
+              decision.data.context
+            );
+          } else {
+            userResponse = await this.userPromptService.askQuestion(
+              agent.id,
+              agent.name,
+              decision.data.message,
+              decision.data.context
+            );
+          }
+          decision.userResponse = userResponse;
+        } catch (error) {
+          console.error('User prompt error:', error);
+          decision.userResponse = null;
+          decision.userPromptError = error instanceof Error ? error.message : 'Unknown error';
+        }
+      } else if (decision.action === 'SEND_MESSAGE' && agent.capabilities.agentCommunication) {
+        // Check if needs approval for low autonomy
+        if (agent.config.autonomyLevel === 'low') {
+          const approved = await this.userPromptService.askApproval(
+            agent.id,
+            agent.name,
+            `Send message to ${decision.data.toAgentId}`,
+            decision.data.message
+          );
+          if (!approved) {
+            decision.approved = false;
+            return decision;
+          }
+        }
         this.agentCommunication.sendMessage(
           agent.id,
           decision.data.toAgentId || 'broadcast',
@@ -304,8 +379,34 @@ export class AgentManager extends EventEmitter {
         agent.stats.messagesSent++;
         this.saveAgents();
       } else if (decision.action === 'DELEGATE_TASK' && agent.capabilities.agentCommunication) {
+        // Check if needs approval for low autonomy
+        if (agent.config.autonomyLevel === 'low') {
+          const approved = await this.userPromptService.askApproval(
+            agent.id,
+            agent.name,
+            `Delegate task to ${decision.data.toAgentId}`,
+            decision.data.taskDescription
+          );
+          if (!approved) {
+            decision.approved = false;
+            return decision;
+          }
+        }
         await this.delegateTask(agent.id, decision.data.toAgentId, decision.data.taskDescription);
       } else if (decision.action === 'EXECUTE_COMMAND' && agent.capabilities.commandExecution) {
+        // Check if needs approval for low/medium autonomy
+        if (agent.config.autonomyLevel === 'low' || agent.config.autonomyLevel === 'medium') {
+          const approved = await this.userPromptService.askApproval(
+            agent.id,
+            agent.name,
+            `Execute command: ${decision.data.command}`,
+            decision.description
+          );
+          if (!approved) {
+            decision.approved = false;
+            return decision;
+          }
+        }
         try {
           const result = await this.commandExecutor.executeCommand(
             decision.data.command,

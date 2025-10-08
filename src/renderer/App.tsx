@@ -8,6 +8,7 @@ import Resources from './pages/Resources';
 import Settings from './pages/Settings';
 import Ollama from './pages/Ollama';
 import Commands from './pages/Commands';
+import UserPromptDialog from './components/UserPromptDialog';
 
 type Page = 'dashboard' | 'agents' | 'providers' | 'models' | 'resources' | 'settings' | 'ollama' | 'commands';
 
@@ -54,6 +55,7 @@ const App: React.FC = () => {
           {renderPage()}
         </div>
       </div>
+      <UserPromptDialog />
     </div>
   );
 };
