@@ -31,9 +31,13 @@ const App: React.FC = () => {
     }
   };
 
+  const handleNavigate = (page: string) => {
+    setCurrentPage(page as Page);
+  };
+
   return (
     <div className="app">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+      <Sidebar currentPage={currentPage} onNavigate={handleNavigate} />
       <div className="main-content">
         <div className="header">
           <h1 className="header-title">

@@ -162,8 +162,8 @@ export class ModelManager extends EventEmitter {
       const writer = fs.createWriteStream(modelPath);
       response.data.pipe(writer);
 
-      await new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
+      await new Promise<void>((resolve, reject) => {
+        writer.on('finish', () => resolve());
         writer.on('error', reject);
       });
 
