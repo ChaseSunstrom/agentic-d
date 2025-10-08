@@ -1,4 +1,4 @@
-import * as robot from 'robotjs';
+import * as robot from '@jitsi/robotjs';
 
 export interface AutomationCommand {
   type: 'mouse_move' | 'mouse_click' | 'keyboard_type' | 'keyboard_press' | 'screenshot' | 'get_mouse_pos' | 'get_screen_size';
