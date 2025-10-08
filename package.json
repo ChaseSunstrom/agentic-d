@@ -17,7 +17,10 @@
     "package:mac": "npm run build && electron-builder --mac"
   },
   "keywords": ["electron", "react", "typescript", "ai", "agents", "llm"],
-  "author": "",
+  "author": {
+    "name": "Chase Sunstrom",
+    "email": "casunstrom@gmail.com"
+  },
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.10.0",
