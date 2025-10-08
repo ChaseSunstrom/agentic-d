@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.0.1] - 2025-01-08
+
+### Models Added
+
+**GPT-OSS Models:**
+- GPT-OSS 120B (70GB) - 117B parameters, optimized for high reasoning tasks (requires 80GB GPU like H100)
+- GPT-OSS 20B (12GB) - 21B parameters, designed for lower latency (runs on 16GB consumer hardware)
+
+Both models added to:
+- ModelManager available models list
+- Ollama recommended models
+- UI displays model descriptions
+
+Total models now: **18 GGUF models**
+
+---
+
 ## [2.0.0] - 2025-01-08
 
 ### Major Features Added
@@ -46,7 +63,7 @@
 
 ### Models Added
 
-16 new GGUF models (Q4_K_M quantization):
+18 total GGUF models (Q4_K_M quantization):
 
 **Llama Models:**
 - Llama 3.3 70B Instruct (40GB) - Latest Meta model
@@ -69,6 +86,10 @@
 - Phi-3.5 Mini Instruct (2.5GB)
 - Gemma 2 9B Instruct (5.5GB)
 - Gemma 2 2B Instruct (1.5GB)
+
+**GPT-OSS Models:**
+- GPT-OSS 120B (70GB) - 117B params, high reasoning
+- GPT-OSS 20B (12GB) - 21B params, lower latency
 
 ### Agent Enhancements
 

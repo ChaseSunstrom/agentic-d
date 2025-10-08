@@ -364,7 +364,9 @@ export class OllamaManager extends EventEmitter {
       { name: 'mistral:7b', description: 'Mistral 7B (efficient)', size: '~4GB' },
       { name: 'phi3:3.8b', description: 'Phi-3 3.8B (Microsoft, efficient)', size: '~2.3GB' },
       { name: 'gemma2:9b', description: 'Gemma 2 9B (Google)', size: '~5.5GB' },
-      { name: 'deepseek-coder-v2:16b', description: 'DeepSeek Coder V2 (advanced coding)', size: '~8.9GB' }
+      { name: 'deepseek-coder-v2:16b', description: 'DeepSeek Coder V2 (advanced coding)', size: '~8.9GB' },
+      { name: 'gpt-oss-120b:latest', description: 'GPT-OSS 120B (117B params, high reasoning - requires 80GB GPU)', size: '~70GB' },
+      { name: 'gpt-oss-20b:latest', description: 'GPT-OSS 20B (21B params, lower latency - runs on 16GB)', size: '~12GB' }
     ];
   }
 

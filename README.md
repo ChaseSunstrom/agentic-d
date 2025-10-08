@@ -8,7 +8,7 @@ A powerful desktop application for running autonomous AI agents with multiple LL
 - **⌨️ Command Execution**: Agents can safely execute terminal commands
 - **🦙 Llama.cpp Integration**: One-click installation and management of llama.cpp
 - **🦙 Enhanced Ollama Support**: Full Ollama integration with recommended models
-- **💾 16 New Models**: Including Llama 3.3, Qwen 2.5, CodeLlama, and more
+- **💾 18 New Models**: Including Llama 3.3, Qwen 2.5, CodeLlama, GPT-OSS 120B/20B, and more
 - **📊 Enhanced Stats**: Track messages sent/received and commands executed
 
 👉 **[See Full Feature Documentation](FEATURES.md)**
@@ -35,7 +35,7 @@ A powerful desktop application for running autonomous AI agents with multiple LL
 - Support for GGUF format models (Llama, Mistral, Phi, Qwen, Gemma, etc.)
 - Automatic scanning for existing models on your system
 - Easy model management (install, uninstall, auto-detect)
-- **NEW**: 16 total models including Llama 3.3, Qwen 2.5, CodeLlama
+- **NEW**: 18 total models including Llama 3.3, Qwen 2.5, CodeLlama, GPT-OSS 120B/20B
 - **NEW**: Direct llama.cpp installation and server management
 - **NEW**: Full Ollama integration with recommended models
 

@@ -96,7 +96,7 @@ Navigate to Ollama page, click to pull "llama3.3:latest" or "qwen2.5-coder:7b", 
 ### 5. Expanded Model Library ✅
 
 **What was added:**
-16 carefully selected GGUF models including the latest Llama 3.3, Qwen 2.5, and CodeLlama.
+18 carefully selected GGUF models including the latest Llama 3.3, Qwen 2.5, CodeLlama, and GPT-OSS models.
 
 **Files Modified:**
 - `src/electron/services/ModelManager.ts` - Updated model list
@@ -109,6 +109,8 @@ Navigate to Ollama page, click to pull "llama3.3:latest" or "qwen2.5-coder:7b", 
 - **DeepSeek Coder V2** - Advanced coding capabilities
 - **Phi-3.5 Mini** - Microsoft's latest efficient model
 - **Gemma 2 series** - Google's latest instruction models
+- **GPT-OSS 120B** - Large-scale 117B param model for high reasoning (80GB GPU)
+- **GPT-OSS 20B** - Efficient 21B param model for lower latency (16GB RAM)
 
 ---
 
@@ -428,7 +430,7 @@ All code follows existing patterns:
 
 Your app now has:
 - **4 new major features** (communication, commands, llama.cpp, enhanced Ollama)
-- **16 new models** (Llama 3.3, Qwen 2.5, CodeLlama, etc.)
+- **18 new models** (Llama 3.3, Qwen 2.5, CodeLlama, GPT-OSS 120B/20B, etc.)
 - **2 new UI pages** (Ollama, Commands)
 - **4 new backend services** (Communication, Commands, Llama, Ollama)
 - **20+ new IPC handlers**
@@ -436,4 +438,4 @@ Your app now has:
 
 The app has evolved from a single-agent system into a powerful multi-agent collaboration platform with comprehensive local model support and safe command execution.
 
-Agents can now work together as a team, share knowledge, delegate tasks, execute commands, and use the latest open-source models with ease!
+Agents can now work together as a team, share knowledge, delegate tasks, execute commands, and use the latest open-source models including the powerful GPT-OSS models with ease!

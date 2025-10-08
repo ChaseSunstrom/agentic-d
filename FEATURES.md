@@ -149,7 +149,7 @@ Comprehensive Ollama management built-in!
 
 ### 💾 Expanded Model Library
 
-16 new models added to the downloadable model library!
+18 new models added to the downloadable model library!
 
 **New Models:**
 - **Llama 3.3 70B Instruct** (40GB) - Latest Meta model
@@ -166,6 +166,8 @@ Comprehensive Ollama management built-in!
 - **Phi-3.5 Mini** (2.5GB) - Latest Microsoft model
 - **Gemma 2 9B** (5.5GB) - Google's instruction model
 - **Gemma 2 2B** (1.5GB) - Compact Google model
+- **GPT-OSS 120B** (70GB) - 117B parameters, optimized for high reasoning tasks (requires 80GB GPU like H100)
+- **GPT-OSS 20B** (12GB) - 21B parameters, designed for lower latency (runs on 16GB consumer hardware)
 
 All models are in GGUF format (Q4_K_M quantization) and can be installed directly from the app.
 

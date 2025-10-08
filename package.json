@@ -1,6 +1,6 @@
 {
   "name": "autonomous-agent-desktop",
-  "version": "1.0.0",
+  "version": "2.0.1",
   "description": "Desktop application for running autonomous agents with multiple LLM providers",
   "main": "dist/electron/main.js",
   "scripts": {

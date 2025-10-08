@@ -16,6 +16,7 @@ export interface LocalModel {
   installed: boolean;
   downloadProgress?: number;
   provider: string;
+  description?: string;
 }
 
 export class ModelManager extends EventEmitter {
@@ -184,6 +185,28 @@ export class ModelManager extends EventEmitter {
       url: 'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf',
       installed: false,
       provider: 'Google'
+    },
+    {
+      id: 'gpt-oss-120b',
+      name: 'GPT-OSS 120B',
+      size: '70GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/mradermacher/GPT-OSS-120B-GGUF/resolve/main/GPT-OSS-120B.Q4_K_M.gguf',
+      installed: false,
+      provider: 'GPT-OSS',
+      description: '117B parameters, optimized for high reasoning tasks. Requires 80GB GPU (e.g., NVIDIA H100).'
+    },
+    {
+      id: 'gpt-oss-20b',
+      name: 'GPT-OSS 20B',
+      size: '12GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/mradermacher/GPT-OSS-20B-GGUF/resolve/main/GPT-OSS-20B.Q4_K_M.gguf',
+      installed: false,
+      provider: 'GPT-OSS',
+      description: '21B parameters, designed for lower latency. Can run on consumer hardware with 16GB memory.'
     }
   ];
 
