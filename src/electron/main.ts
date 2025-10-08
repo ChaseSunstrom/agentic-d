@@ -10,6 +10,7 @@ import { AgentCommunication } from './services/AgentCommunication';
 import { CommandExecutor } from './services/CommandExecutor';
 import { LlamaManager } from './services/LlamaManager';
 import { OllamaManager } from './services/OllamaManager';
+import { UserPromptService } from './services/UserPromptService';
 
 let mainWindow: BrowserWindow | null = null;
 let agentManager: AgentManager;
@@ -22,6 +23,7 @@ let agentCommunication: AgentCommunication;
 let commandExecutor: CommandExecutor;
 let llamaManager: LlamaManager;
 let ollamaManager: OllamaManager;
+let userPromptService: UserPromptService;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -54,6 +56,8 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  createWindow();
+
   // Initialize services
   costTracker = new CostTracker();
   llmProviderManager = new LLMProviderManager(costTracker);
@@ -64,16 +68,16 @@ app.whenReady().then(() => {
   commandExecutor = new CommandExecutor();
   llamaManager = new LlamaManager();
   ollamaManager = new OllamaManager();
+  userPromptService = new UserPromptService(mainWindow);
   agentManager = new AgentManager(
     llmProviderManager, 
     automationService, 
     resourceMonitor, 
     costTracker,
     agentCommunication,
-    commandExecutor
+    commandExecutor,
+    userPromptService
   );
-
-  createWindow();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -336,5 +340,42 @@ function setupIPC(): void {
     if (mainWindow) {
       mainWindow.webContents.send('agent:message', message);
     }
+  });
+
+  // User Prompt APIs
+  ipcMain.handle('user-prompt:respond', async (_, promptId, response) => {
+    return userPromptService.respondToPrompt(promptId, response);
+  });
+
+  ipcMain.handle('user-prompt:cancel', async (_, promptId) => {
+    return userPromptService.cancelPrompt(promptId);
+  });
+
+  ipcMain.handle('user-prompt:get-pending', async () => {
+    return userPromptService.getPendingPrompts();
+  });
+
+  ipcMain.handle('user-prompt:get-current', async () => {
+    return userPromptService.getCurrentPrompt();
+  });
+
+  ipcMain.handle('user-prompt:get-history', async (_, agentId) => {
+    return userPromptService.getPromptHistory(agentId);
+  });
+
+  ipcMain.handle('user-prompt:clear-history', async () => {
+    userPromptService.clearHistory();
+  });
+
+  // Automation APIs with screenshot
+  ipcMain.handle('automation:screenshot', async (_, region) => {
+    return await automationService.executeCommand({
+      type: 'screenshot',
+      params: region ? { region } : undefined
+    });
+  });
+
+  ipcMain.handle('automation:execute', async (_, command) => {
+    return await automationService.executeCommand(command);
   });
 }
