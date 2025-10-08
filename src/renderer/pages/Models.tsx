@@ -107,6 +107,11 @@ const Models: React.FC = () => {
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
                   Provider: {model.provider}
                 </div>
+                {model.description && (
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', fontStyle: 'italic' }}>
+                    {model.description}
+                  </div>
+                )}
                 {model.path && (
                   <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '12px', wordBreak: 'break-all' }}>
                     {model.path}
@@ -142,6 +147,11 @@ const Models: React.FC = () => {
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
               Provider: {model.provider}
             </div>
+            {model.description && (
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', fontStyle: 'italic' }}>
+                {model.description}
+              </div>
+            )}
             {downloadProgress[model.id] !== undefined ? (
               <div>
                 <div style={{ fontSize: '12px', marginBottom: '8px' }}>

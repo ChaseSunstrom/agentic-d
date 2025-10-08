@@ -15,6 +15,8 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ providers, onClose,
   const [computerControl, setComputerControl] = useState(false);
   const [fileSystem, setFileSystem] = useState(false);
   const [network, setNetwork] = useState(false);
+  const [agentCommunication, setAgentCommunication] = useState(true);
+  const [commandExecution, setCommandExecution] = useState(false);
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(2000);
   const [autonomyLevel, setAutonomyLevel] = useState<'low' | 'medium' | 'high'>('medium');
@@ -38,7 +40,9 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ providers, onClose,
       capabilities: {
         computerControl,
         fileSystem,
-        network
+        network,
+        agentCommunication,
+        commandExecution
       },
       config: {
         temperature,
@@ -157,6 +161,22 @@ const CreateAgentModal: React.FC<CreateAgentModalProps> = ({ providers, onClose,
                   onChange={(e) => setNetwork(e.target.checked)}
                 />
                 <span>Network Access</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={agentCommunication}
+                  onChange={(e) => setAgentCommunication(e.target.checked)}
+                />
+                <span>Agent Communication (message passing, task delegation)</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={commandExecution}
+                  onChange={(e) => setCommandExecution(e.target.checked)}
+                />
+                <span>Command Execution (run terminal commands)</span>
               </label>
             </div>
           </div>

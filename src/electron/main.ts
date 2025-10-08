@@ -6,6 +6,10 @@ import { ModelManager } from './services/ModelManager';
 import { AutomationService } from './services/AutomationService';
 import { ResourceMonitor } from './services/ResourceMonitor';
 import { CostTracker } from './services/CostTracker';
+import { AgentCommunication } from './services/AgentCommunication';
+import { CommandExecutor } from './services/CommandExecutor';
+import { LlamaManager } from './services/LlamaManager';
+import { OllamaManager } from './services/OllamaManager';
 
 let mainWindow: BrowserWindow | null = null;
 let agentManager: AgentManager;
@@ -14,6 +18,10 @@ let modelManager: ModelManager;
 let automationService: AutomationService;
 let resourceMonitor: ResourceMonitor;
 let costTracker: CostTracker;
+let agentCommunication: AgentCommunication;
+let commandExecutor: CommandExecutor;
+let llamaManager: LlamaManager;
+let ollamaManager: OllamaManager;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -52,7 +60,18 @@ app.whenReady().then(() => {
   modelManager = new ModelManager();
   automationService = new AutomationService();
   resourceMonitor = new ResourceMonitor();
-  agentManager = new AgentManager(llmProviderManager, automationService, resourceMonitor, costTracker);
+  agentCommunication = new AgentCommunication();
+  commandExecutor = new CommandExecutor();
+  llamaManager = new LlamaManager();
+  ollamaManager = new OllamaManager();
+  agentManager = new AgentManager(
+    llmProviderManager, 
+    automationService, 
+    resourceMonitor, 
+    costTracker,
+    agentCommunication,
+    commandExecutor
+  );
 
   createWindow();
 
@@ -68,6 +87,8 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     agentManager.stopAllAgents();
+    llamaManager?.stopAllServers();
+    ollamaManager?.destroy();
     app.quit();
   }
 });
@@ -190,5 +211,130 @@ function setupIPC(): void {
     const Store = require('electron-store');
     const store = new Store();
     store.set(key, value);
+  });
+
+  // Agent Communication
+  ipcMain.handle('agent:send-message', async (_, fromAgentId, toAgentId, content, type) => {
+    return await agentManager.sendAgentMessage(fromAgentId, toAgentId, content, type);
+  });
+
+  ipcMain.handle('agent:get-messages', async (_, agentId, includeRead) => {
+    return await agentManager.getAgentMessages(agentId, includeRead);
+  });
+
+  ipcMain.handle('agent:get-tasks', async (_, agentId) => {
+    return await agentManager.getAgentTasks(agentId);
+  });
+
+  ipcMain.handle('agent:delegate-task', async (_, fromAgentId, toAgentId, description) => {
+    return await agentManager.delegateTask(fromAgentId, toAgentId, description);
+  });
+
+  // Command Execution
+  ipcMain.handle('command:execute', async (_, command, options) => {
+    return await commandExecutor.executeCommand(command, options);
+  });
+
+  ipcMain.handle('command:kill', async (_, id) => {
+    return commandExecutor.killCommand(id);
+  });
+
+  ipcMain.handle('command:get-running', async () => {
+    return commandExecutor.getRunningCommands();
+  });
+
+  ipcMain.handle('command:get-history', async (_, agentId, limit) => {
+    return commandExecutor.getHistory(agentId, limit);
+  });
+
+  ipcMain.handle('command:is-safe', async (_, command) => {
+    return commandExecutor.isCommandSafe(command);
+  });
+
+  // Llama.cpp Management
+  ipcMain.handle('llama:is-installed', async () => {
+    return await llamaManager.isInstalled();
+  });
+
+  ipcMain.handle('llama:install', async () => {
+    return await llamaManager.installLlamaCpp();
+  });
+
+  ipcMain.handle('llama:uninstall', async () => {
+    return await llamaManager.uninstallLlamaCpp();
+  });
+
+  ipcMain.handle('llama:start-server', async (_, modelPath, config) => {
+    return await llamaManager.startServer(modelPath, config);
+  });
+
+  ipcMain.handle('llama:stop-server', async (_, id) => {
+    return await llamaManager.stopServer(id);
+  });
+
+  ipcMain.handle('llama:get-servers', async () => {
+    return llamaManager.getRunningServers();
+  });
+
+  ipcMain.handle('llama:get-version', async () => {
+    return llamaManager.getVersion();
+  });
+
+  // Ollama Management
+  ipcMain.handle('ollama:check-installation', async () => {
+    return await ollamaManager.checkInstallation();
+  });
+
+  ipcMain.handle('ollama:is-running', async () => {
+    return await ollamaManager.isRunning();
+  });
+
+  ipcMain.handle('ollama:start', async () => {
+    return await ollamaManager.startOllama();
+  });
+
+  ipcMain.handle('ollama:list-models', async () => {
+    return await ollamaManager.listModels();
+  });
+
+  ipcMain.handle('ollama:pull-model', async (_, modelName) => {
+    return await ollamaManager.pullModel(modelName);
+  });
+
+  ipcMain.handle('ollama:delete-model', async (_, modelName) => {
+    return await ollamaManager.deleteModel(modelName);
+  });
+
+  ipcMain.handle('ollama:get-recommended', async () => {
+    return ollamaManager.getRecommendedModels();
+  });
+
+  ipcMain.handle('ollama:get-model-info', async (_, modelName) => {
+    return await ollamaManager.getModelInfo(modelName);
+  });
+
+  // Setup event forwarding to renderer
+  llamaManager.on('install:progress', (data) => {
+    if (mainWindow) {
+      mainWindow.webContents.send('llama:install-progress', data);
+    }
+  });
+
+  ollamaManager.on('model:pull:progress', (data) => {
+    if (mainWindow) {
+      mainWindow.webContents.send('ollama:pull-progress', data);
+    }
+  });
+
+  commandExecutor.on('command:completed', (result) => {
+    if (mainWindow) {
+      mainWindow.webContents.send('command:completed', result);
+    }
+  });
+
+  agentCommunication.on('message:sent', (message) => {
+    if (mainWindow) {
+      mainWindow.webContents.send('agent:message', message);
+    }
   });
 }

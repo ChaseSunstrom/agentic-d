@@ -1,6 +1,6 @@
 {
   "name": "autonomous-agent-desktop",
-  "version": "1.0.0",
+  "version": "2.0.1",
   "description": "Desktop application for running autonomous agents with multiple LLM providers",
   "main": "dist/electron/main.js",
   "scripts": {
@@ -56,7 +56,8 @@
     "systeminformation": "^5.21.20",
     "recharts": "^2.10.3",
     "lucide-react": "^0.294.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "extract-zip": "^2.0.1"
   },
   "build": {
     "appId": "com.autonomousagent.desktop",

@@ -50,6 +50,16 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onStart, onStop, onDelete 
               🌐 Network
             </span>
           )}
+          {agent.capabilities.agentCommunication && (
+            <span style={{ fontSize: '11px', padding: '4px 8px', background: 'var(--bg-tertiary)', borderRadius: '4px' }}>
+              💬 Agent Comms
+            </span>
+          )}
+          {agent.capabilities.commandExecution && (
+            <span style={{ fontSize: '11px', padding: '4px 8px', background: 'var(--bg-tertiary)', borderRadius: '4px' }}>
+              ⌨️ Commands
+            </span>
+          )}
         </div>
       </div>
 
@@ -66,6 +76,20 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onStart, onStop, onDelete 
           <div className="agent-stat-label">Cost</div>
           <div className="agent-stat-value">${(agent.stats?.totalCost || 0).toFixed(4)}</div>
         </div>
+        {agent.capabilities.agentCommunication && (
+          <div className="agent-stat">
+            <div className="agent-stat-label">Messages</div>
+            <div className="agent-stat-value">
+              {agent.stats?.messagesSent || 0} / {agent.stats?.messagesReceived || 0}
+            </div>
+          </div>
+        )}
+        {agent.capabilities.commandExecution && (
+          <div className="agent-stat">
+            <div className="agent-stat-label">Commands</div>
+            <div className="agent-stat-value">{agent.stats?.commandsExecuted || 0}</div>
+          </div>
+        )}
       </div>
 
       <div className="agent-actions">

@@ -16,6 +16,7 @@ export interface LocalModel {
   installed: boolean;
   downloadProgress?: number;
   provider: string;
+  description?: string;
 }
 
 export class ModelManager extends EventEmitter {
@@ -26,14 +27,104 @@ export class ModelManager extends EventEmitter {
   // Curated list of popular open-source models
   private availableModels: LocalModel[] = [
     {
+      id: 'llama-3.3-70b',
+      name: 'Llama 3.3 70B Instruct',
+      size: '40GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF/resolve/main/Llama-3.3-70B-Instruct-Q4_K_M.gguf',
+      installed: false,
+      provider: 'Meta'
+    },
+    {
       id: 'llama-3.2-3b',
-      name: 'Llama 3.2 3B',
+      name: 'Llama 3.2 3B Instruct',
       size: '2GB',
       format: 'GGUF',
       quantization: 'Q4_K_M',
-      url: 'https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q4_K_M.gguf',
+      url: 'https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf',
       installed: false,
       provider: 'Meta'
+    },
+    {
+      id: 'llama-3.2-1b',
+      name: 'Llama 3.2 1B Instruct',
+      size: '1GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf',
+      installed: false,
+      provider: 'Meta'
+    },
+    {
+      id: 'codellama-13b',
+      name: 'Code Llama 13B Instruct',
+      size: '7.5GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/TheBloke/CodeLlama-13B-Instruct-GGUF/resolve/main/codellama-13b-instruct.Q4_K_M.gguf',
+      installed: false,
+      provider: 'Meta'
+    },
+    {
+      id: 'codellama-7b',
+      name: 'Code Llama 7B Instruct',
+      size: '4GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/TheBloke/CodeLlama-7B-Instruct-GGUF/resolve/main/codellama-7b-instruct.Q4_K_M.gguf',
+      installed: false,
+      provider: 'Meta'
+    },
+    {
+      id: 'qwen2.5-14b',
+      name: 'Qwen 2.5 14B Instruct',
+      size: '8GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/bartowski/Qwen2.5-14B-Instruct-GGUF/resolve/main/Qwen2.5-14B-Instruct-Q4_K_M.gguf',
+      installed: false,
+      provider: 'Alibaba'
+    },
+    {
+      id: 'qwen2.5-7b',
+      name: 'Qwen 2.5 7B Instruct',
+      size: '4.5GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf',
+      installed: false,
+      provider: 'Alibaba'
+    },
+    {
+      id: 'qwen2.5-coder-7b',
+      name: 'Qwen 2.5 Coder 7B Instruct',
+      size: '4.5GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/bartowski/Qwen2.5-Coder-7B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf',
+      installed: false,
+      provider: 'Alibaba'
+    },
+    {
+      id: 'qwen2.5-coder-14b',
+      name: 'Qwen 2.5 Coder 14B Instruct',
+      size: '8GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/bartowski/Qwen2.5-Coder-14B-Instruct-GGUF/resolve/main/Qwen2.5-Coder-14B-Instruct-Q4_K_M.gguf',
+      installed: false,
+      provider: 'Alibaba'
+    },
+    {
+      id: 'deepseek-coder-v2-16b',
+      name: 'DeepSeek Coder V2 16B Instruct',
+      size: '9GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/bartowski/DeepSeek-Coder-V2-Instruct-16B-GGUF/resolve/main/DeepSeek-Coder-V2-Instruct-16B-Q4_K_M.gguf',
+      installed: false,
+      provider: 'DeepSeek'
     },
     {
       id: 'deepseek-coder-6.7b',
@@ -46,14 +137,24 @@ export class ModelManager extends EventEmitter {
       provider: 'DeepSeek'
     },
     {
-      id: 'mistral-7b',
-      name: 'Mistral 7B Instruct',
-      size: '4GB',
+      id: 'mistral-7b-v0.3',
+      name: 'Mistral 7B Instruct v0.3',
+      size: '4.5GB',
       format: 'GGUF',
       quantization: 'Q4_K_M',
-      url: 'https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf',
+      url: 'https://huggingface.co/MaziyarPanahi/Mistral-7B-Instruct-v0.3-GGUF/resolve/main/Mistral-7B-Instruct-v0.3.Q4_K_M.gguf',
       installed: false,
       provider: 'Mistral AI'
+    },
+    {
+      id: 'phi-3.5-mini',
+      name: 'Phi-3.5 Mini Instruct',
+      size: '2.5GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf',
+      installed: false,
+      provider: 'Microsoft'
     },
     {
       id: 'phi-3-mini',
@@ -66,24 +167,46 @@ export class ModelManager extends EventEmitter {
       provider: 'Microsoft'
     },
     {
-      id: 'qwen2-7b',
-      name: 'Qwen2 7B',
-      size: '4GB',
-      format: 'GGUF',
-      quantization: 'Q4_K_M',
-      url: 'https://huggingface.co/Qwen/Qwen2-7B-Instruct-GGUF/resolve/main/qwen2-7b-instruct-q4_k_m.gguf',
-      installed: false,
-      provider: 'Alibaba'
-    },
-    {
       id: 'gemma-2-9b',
-      name: 'Gemma 2 9B',
-      size: '5GB',
+      name: 'Gemma 2 9B Instruct',
+      size: '5.5GB',
       format: 'GGUF',
       quantization: 'Q4_K_M',
-      url: 'https://huggingface.co/google/gemma-2-9b-it-GGUF/resolve/main/gemma-2-9b-it.Q4_K_M.gguf',
+      url: 'https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/resolve/main/gemma-2-9b-it-Q4_K_M.gguf',
       installed: false,
       provider: 'Google'
+    },
+    {
+      id: 'gemma-2-2b',
+      name: 'Gemma 2 2B Instruct',
+      size: '1.5GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf',
+      installed: false,
+      provider: 'Google'
+    },
+    {
+      id: 'gpt-oss-120b',
+      name: 'GPT-OSS 120B',
+      size: '70GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/mradermacher/GPT-OSS-120B-GGUF/resolve/main/GPT-OSS-120B.Q4_K_M.gguf',
+      installed: false,
+      provider: 'GPT-OSS',
+      description: '117B parameters, optimized for high reasoning tasks. Requires 80GB GPU (e.g., NVIDIA H100).'
+    },
+    {
+      id: 'gpt-oss-20b',
+      name: 'GPT-OSS 20B',
+      size: '12GB',
+      format: 'GGUF',
+      quantization: 'Q4_K_M',
+      url: 'https://huggingface.co/mradermacher/GPT-OSS-20B-GGUF/resolve/main/GPT-OSS-20B.Q4_K_M.gguf',
+      installed: false,
+      provider: 'GPT-OSS',
+      description: '21B parameters, designed for lower latency. Can run on consumer hardware with 16GB memory.'
     }
   ];
 
